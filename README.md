@@ -1,5 +1,5 @@
 # PBRT
-PBR验证平台
+PBR实验框架
 
 ## How to Start
 

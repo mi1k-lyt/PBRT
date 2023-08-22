@@ -10,6 +10,7 @@ set(UTILS_PATH ${SRC_PATH}/utils)
 set(SHADER_PATH ${SRC_PATH}/shaders)
 
 add_subdirectory(${VENDOR_PATH}/GLFW)
+add_subdirectory(${VENDOR_PATH}/assimp)
 
 if(WIN32)
     set(LIBS opengl32 assimp freetype irrKlang)
@@ -52,6 +53,7 @@ add_executable(PBRT
 )
 
 target_link_libraries(PBRT
+    assimp
     glfw3
     ${LIBS}
 )
