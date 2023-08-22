@@ -109,6 +109,17 @@ int main()
     shader.use();
     shader.setMat4("projection", projection);
 
+    // render light source (simply re-render sphere at light positions)
+    // this looks a bit off as we use the same shader, but it'll make their positions obvious and 
+    // keeps the codeprint small.
+    for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+    {
+        glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+        newPos = lightPositions[i];
+        shader.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+        shader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+    }
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -135,44 +146,34 @@ int main()
 
         // render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
         glm::mat4 model = glm::mat4(1.0f);
-        for (int row = 0; row < nrRows; ++row) 
-        {
-            shader.setFloat("metallic", (float)row / (float)nrRows);
-            for (int col = 0; col < nrColumns; ++col) 
-            {
-                // we clamp the roughness to 0.05 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
-                // on direct lighting.
-                shader.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+        // for (int row = 0; row < nrRows; ++row) 
+        // {
+        //     shader.setFloat("metallic", (float)row / (float)nrRows);
+        //     for (int col = 0; col < nrColumns; ++col) 
+        //     {
+        //         // we clamp the roughness to 0.05 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+        //         // on direct lighting.
+        //         shader.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
                 
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(
-                    (col - (nrColumns / 2)) * spacing, 
-                    (row - (nrRows / 2)) * spacing, 
+        //         model = glm::mat4(1.0f);
+        //         model = glm::translate(model, glm::vec3(
+        //             (col - (nrColumns / 2)) * spacing, 
+        //             (row - (nrRows / 2)) * spacing, 
+        //             0.0f
+        //         ));
+        //         shader.setMat4("model", model);
+        //         shader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        //         renderSphere();
+        //     }
+        // }
+        model = glm::translate(model, glm::vec3(
+                    (0.0f) * spacing, 
+                    (0.0f) * spacing, 
                     0.0f
                 ));
-                shader.setMat4("model", model);
-                shader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-                renderSphere();
-            }
-        }
-
-        // render light source (simply re-render sphere at light positions)
-        // this looks a bit off as we use the same shader, but it'll make their positions obvious and 
-        // keeps the codeprint small.
-        for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
-        {
-            glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
-            newPos = lightPositions[i];
-            shader.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
-            shader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, newPos);
-            model = glm::scale(model, glm::vec3(0.5f));
-            shader.setMat4("model", model);
-            shader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-            renderSphere();
-        }
+        shader.setMat4("model", model);
+        shader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        renderSphere();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
