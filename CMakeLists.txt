@@ -37,6 +37,8 @@ include_directories(
     ${VENDOR_PATH}/GLFW/include
     ${VENDOR_PATH}/stb_image
     ${VENDOR_PATH}/glm
+    ${VENDOR_PATH}/imgui
+    ${VENDOR_PATH}/imgui/backends
     ${SRC_PATH}
     ${SRC_PATH}/shaders
 )
@@ -46,10 +48,42 @@ file(GLOB_RECURSE FILES
     ${SRC_PATH}/*.h
     ${SHADER_PATH}/*.vs
     ${SHADER_PATH}/*.fs
+    
+
 )
+
+file(GLOB_RECURSE IMGUI_FILES
+    ${VENDOR_PATH}/imgui/imconfig.h
+    ${VENDOR_PATH}/imgui/imgui.h
+    ${VENDOR_PATH}/imgui/imgui.cpp
+    ${VENDOR_PATH}/imgui/imgui_draw.cpp
+    ${VENDOR_PATH}/imgui/imgui_internal.h
+    ${VENDOR_PATH}/imgui/imgui_tables.cpp
+    ${VENDOR_PATH}/imgui/imgui_widgets.cpp
+    ${VENDOR_PATH}/imgui/imstb_rectpack.h
+    ${VENDOR_PATH}/imgui/imstb_textedit.h
+    ${VENDOR_PATH}/imgui/imstb_truetype.h
+    ${VENDOR_PATH}/imgui/imgui_demo.cpp
+)
+
+file(GLOB_RECURSE IMGUI_IMPL_FILES
+    ${VENDOR_PATH}/imgui/backends/imgui_impl_glfw.h
+    ${VENDOR_PATH}/imgui/backends/imgui_impl_opengl3.h
+    ${VENDOR_PATH}/imgui/backends/imgui_impl_glfw.cpp
+    ${VENDOR_PATH}/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+add_library(IMGUI ${IMGUI_FILES})
+set(LIBS ${LIBS} IMGUI)
+
+add_library(IMGUI_IMPL ${IMGUI_IMPL_FILES})
+target_link_libraries(IMGUI_IMPL IMGUI)
+set(LIBS ${LIBS} IMGUI_IMPL)
 
 add_executable(PBRT
     ${FILES}
+    ${IMGUI_FILES}
+    ${IMGUI_IMPL_FILES}
 )
 
 target_link_libraries(PBRT
