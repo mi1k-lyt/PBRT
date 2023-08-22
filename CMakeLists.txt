@@ -77,13 +77,10 @@ add_library(IMGUI ${IMGUI_FILES})
 set(LIBS ${LIBS} IMGUI)
 
 add_library(IMGUI_IMPL ${IMGUI_IMPL_FILES})
-target_link_libraries(IMGUI_IMPL IMGUI)
 set(LIBS ${LIBS} IMGUI_IMPL)
 
 add_executable(PBRT
     ${FILES}
-    ${IMGUI_FILES}
-    ${IMGUI_IMPL_FILES}
 )
 
 target_link_libraries(PBRT
