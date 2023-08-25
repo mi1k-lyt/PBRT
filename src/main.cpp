@@ -46,8 +46,8 @@ int main()
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -87,7 +87,7 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader shader("../src/shaders/1.1.pbr.vs", "../src/shaders/1.1.pbr.fs");
+    Shader shader("../src/shaders/StandardPbr.vs", "../src/shaders/StandardPbr.fs");
 
     shader.use();
     shader.setVec3("albedo", 0.5f, 0.0f, 0.0f);

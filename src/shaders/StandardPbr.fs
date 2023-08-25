@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 WorldPos;
@@ -18,18 +18,11 @@ uniform vec3 camPos;
 
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
-float DistributionGGX(vec3 N, vec3 H, float roughness)
+float D_GGX(float NoH, float roughness)
 {
-    float a = roughness*roughness;
-    float a2 = a*a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-
-    float nom   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return nom / denom;
+    float a = roughness * roughness;
+    float k = roughness / (1.0 - NoH * NoH + a * a);
+    return k * k * (1.0 / PI);
 }
 // ----------------------------------------------------------------------------
 float GeometrySchlickGGX(float NdotV, float roughness)
@@ -52,12 +45,49 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
     return ggx1 * ggx2;
 }
+
+
+float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
+    float a2 = roughness * roughness;
+    float GGXV = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
+    float GGXL = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
+    return 0.5 / (GGXV + GGXL);
+}
+
+float V_SmithGGXCorrelatedFast(float NoV, float NoL, float roughness) {
+    float a = roughness;
+    float GGXV = NoL * (NoV * (1.0 - a) + a);
+    float GGXL = NoV * (NoL * (1.0 - a) + a);
+    return 0.5 / (GGXV + GGXL);
+}
+
 // ----------------------------------------------------------------------------
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
+vec3 fresnelSchlick(float cosTheta, vec3 F0) // 标量优化 F90 = 1.0
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
+
+float F_Schlick(float VoH, float F0, float F90) 
+{
+    return F0 + (F90 - F0) * pow(1.0 - VoH, 5.0);
+}
 // ----------------------------------------------------------------------------
+
+// 兰伯特漫反射
+float Fd_Lambert() 
+{
+    return 1.0 / PI;
+}
+// 迪士尼漫反射
+float Fd_Disney(float NoV, float NoL, float LoH, float roughness)
+{
+    float F90 = 0.5 + 2.0 * roughness * LoH * LoH;
+    float lightScatter = F_Schlick(NoL, 1.0, F90);
+    float viewScatter  = F_Schlick(NoV, 1.0, F90);
+    return lightScatter * viewScatter * (1.0 / PI);
+}
+
+
 void main()
 {		
     vec3 N = normalize(Normal);
@@ -80,13 +110,21 @@ void main()
         vec3 radiance = lightColors[i] * attenuation;
 
         // Cook-Torrance BRDF
-        float NDF = DistributionGGX(N, H, roughness);   
-        float G   = GeometrySmith(N, V, L, roughness);      
-        vec3 F    = fresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
-           
-        vec3 numerator    = NDF * G * F; 
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-        vec3 specular = numerator / denominator;
+        float NoH = max(dot(N, H), 0.0);
+        float NoV = max(dot(N, V), 0.0);
+        float NoL = max(dot(N, L), 0.0);
+        float LoH = max(dot(L, H), 0.0); 
+
+        
+        float NDF  = D_GGX(NoH, roughness);
+        float Visi = V_SmithGGXCorrelatedFast(NoV, NoL, roughness);
+        vec3  F    = fresnelSchlick(LoH, F0);
+        vec3  Fr   = (NDF * Visi) * F;
+
+        vec3  diffuseColor = (1.0 - metallic) * albedo;
+        //vec3  Fd = Fd_Lambert() * diffuseColor;
+        vec3  Fd = Fd_Disney(NoV, NoL, LoH, roughness) * diffuseColor ;
+        
         
         // kS is equal to Fresnel
         vec3 kS = F;
@@ -97,13 +135,11 @@ void main()
         // multiply kD by the inverse metalness such that only non-metals 
         // have diffuse lighting, or a linear blend if partly metal (pure metals
         // have no diffuse light).
-        kD *= 1.0 - metallic;	  
-
-        // scale light by NdotL
-        float NdotL = max(dot(N, L), 0.0);        
+        
+        vec3 BRDF = (kD * Fd + kS * Fr);
 
         // add to outgoing radiance Lo
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        Lo += (BRDF) * radiance * NoL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
     }   
     
     // ambient lighting (note that the next IBL tutorial will replace 
