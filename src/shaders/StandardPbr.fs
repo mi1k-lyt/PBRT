@@ -67,9 +67,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) // 标量优化 F90 = 1.0
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float F_Schlick(float VoH, float F0, float F90) 
+float F_Schlick(float u, float F0, float F90) 
 {
-    return F0 + (F90 - F0) * pow(1.0 - VoH, 5.0);
+    return F0 + (F90 - F0) * pow(1.0 - u, 5.0);
 }
 // ----------------------------------------------------------------------------
 
@@ -137,6 +137,7 @@ void main()
         // have no diffuse light).
         
         vec3 BRDF = (kD * Fd + kS * Fr);
+        //vec3 BRDF = Fd + Fr;
 
         // add to outgoing radiance Lo
         Lo += (BRDF) * radiance * NoL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
