@@ -9,6 +9,11 @@ uniform vec3 albedo;
 uniform float metallic;
 uniform float roughness;
 uniform float ao;
+// Fresnel反射率
+uniform float refl;
+// 透明涂层
+uniform float clearCoat;
+uniform float clearCoatRoughness;
 
 // IBL
 uniform samplerCube irradianceMap;
@@ -66,6 +71,10 @@ float V_SmithGGXCorrelatedFast(float NoV, float NoL, float roughness) {
     return 0.5 / (GGXV + GGXL);
 }
 
+float V_Kelemen(float LoH) {
+    return 0.25 / (LoH * LoH);
+}
+
 // ----------------------------------------------------------------------------
 vec3 fresnelSchlick(float cosTheta, vec3 F0) // 标量优化 F90 = 1.0
 {
@@ -83,6 +92,9 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 }  
 // ----------------------------------------------------------------------------
 
+
+
+
 // 兰伯特漫反射
 float Fd_Lambert() 
 {
@@ -97,6 +109,14 @@ float Fd_Disney(float NoV, float NoL, float LoH, float roughness)
     return lightScatter * viewScatter * (1.0 / PI);
 }
 
+// // 多重散射补偿
+// vec3 tint(vec3 albedo)
+// {
+//     float luminance = dot(vec3(0.3f, 0.6f, 1.0f), albedo);
+//     return (luminance > 0.0f) ? albedo : vec3(1.0f/luminance);
+// }
+
+// vec3 sheen()
 
 void main()
 {		
@@ -105,9 +125,10 @@ void main()
     vec3 R = reflect(-V, N);
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
-    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
-    vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, albedo, metallic);
+    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow) 
+    vec3 reflt = vec3(refl);
+    vec3 F0 = 0.16 * reflt * reflt * (1.0 - metallic) + albedo * metallic; 
+    // F0 = mix(F0, albedo, metallic);
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -115,7 +136,11 @@ void main()
     
     float NoV = max(dot(N, V), 0.0);
 
-    for(int i = 0; i < 4; ++i) 
+    vec2 brdf = texture(brdfLUT, vec2(NoV, roughness)).rg;
+
+    vec3 energyCompensation = 1.0 + F0 * (1.0 / brdf.y - 1.0);
+
+    for(int i = 0; i < 1; ++i) 
     {
         // calculate per-light radiance
         vec3 L = normalize(lightPositions[i] - WorldPos);
@@ -134,6 +159,8 @@ void main()
         vec3  F    = fresnelSchlick(LoH, F0);
 
         vec3  Fr   = (NDF * Visi) * F;
+        //多重散射 补偿BRDF
+        //Fr *= (0.001 * energyCompensation);
 
         vec3  diffuseColor = (1.0 - metallic) * albedo;
         //vec3  Fd = Fd_Lambert() * diffuseColor;
@@ -150,8 +177,16 @@ void main()
         // have diffuse lighting, or a linear blend if partly metal (pure metals
         // have no diffuse light).
         
-        vec3 BRDF = (kD * Fd + Fr);
         
+
+        //透明涂层BRDF
+        float Dc = D_GGX(NoH, clearCoatRoughness);
+        float Vc = V_Kelemen(LoH);
+        float Fc = F_Schlick(LoH, 0.04, 1.0) * clearCoat;
+        float Frc = (Dc * Vc) * Fc;
+        
+        vec3 BRDF = ((Fd + Fr * (1.0 - Fc)) * (1.0 - Fc) + Frc);
+        //vec3 BRDF = (kD * Fd + Fr);
 
         // add to outgoing radiance Lo
         Lo += (BRDF) * radiance * NoL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
@@ -161,6 +196,8 @@ void main()
     vec3 F = fresnelSchlickRoughness(NoV, F0, roughness);
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
+
+    
      
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuse = irradiance * albedo * (1.0 - metallic); 
@@ -168,10 +205,11 @@ void main()
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;    
-    vec2 brdf  = texture(brdfLUT, vec2(NoV, roughness)).rg;
+    
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
+    //vec3 ambient = vec3(0.05) * albedo * ao;
 
     vec3 color = ambient + Lo;
 

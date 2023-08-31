@@ -105,7 +105,6 @@ int main()
     shader.setInt("irradianceMap", 0);
     shader.setInt("prefilterMap", 1);
     shader.setInt("brdfLUT", 2);
-
     shader.setVec3("albedo", 0.5f, 0.0f, 0.0f);
     shader.setFloat("ao", 1.0f);
 
@@ -379,6 +378,11 @@ int main()
     float metallic = 0.5f;
     float roughness = 0.5f;
     float ao = 1.0f;
+    // 线性Fresnel
+    float refl = 0.56f;
+    //透明涂层
+    float clearCoat = 0.05f;
+    float clearCoatRoughness = 0.5f;
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -397,12 +401,19 @@ int main()
         ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
         ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
         ImGui::SliderFloat("ao", &ao, 0.0f, 1.0f);
+        ImGui::SliderFloat("refl", &refl, 0.0f, 1.0f);
+        ImGui::SliderFloat("clearCoat", &clearCoat, 0.0f, 10.0f);
+        ImGui::SliderFloat("clearCoatRoughness", &clearCoatRoughness, 0.0f, 1.0f);
 
         shader.use();
         shader.setVec3("albedo", albedo[0], albedo[1], albedo[2]);
         shader.setFloat("metallic", metallic);
         shader.setFloat("roughness", roughness);
         shader.setFloat("ao", ao);
+        shader.setFloat("refl", refl);
+        shader.setFloat("clearCoat", clearCoat);
+        shader.setFloat("clearCoatRoughness", clearCoatRoughness);
+        //---------------------------   
         // bind pre-computed IBL data
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
@@ -410,7 +421,6 @@ int main()
         glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-        //---------------------------   
 
         // per-frame time logic
         // --------------------
