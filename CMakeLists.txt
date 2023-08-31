@@ -39,6 +39,7 @@ include_directories(
     ${VENDOR_PATH}/glm
     ${VENDOR_PATH}/imgui
     ${VENDOR_PATH}/imgui/backends
+    ${VENDOR_PATH}/assimp/include
     ${SRC_PATH}
     ${SRC_PATH}/shaders
 )
@@ -48,8 +49,6 @@ file(GLOB_RECURSE FILES
     ${SRC_PATH}/*.h
     ${SHADER_PATH}/*.vs
     ${SHADER_PATH}/*.fs
-    
-
 )
 
 file(GLOB_RECURSE IMGUI_FILES

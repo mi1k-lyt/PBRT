@@ -10,3 +10,6 @@
 [submodule "vendor/imgui"]
 	path = vendor/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "vendor/tinygltf"]
+	path = vendor/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
