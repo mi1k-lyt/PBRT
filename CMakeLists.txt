@@ -13,8 +13,6 @@ add_subdirectory(${VENDOR_PATH}/GLFW)
 add_subdirectory(${VENDOR_PATH}/assimp)
 
 if(WIN32)
-    set(LIBS opengl32 assimp freetype irrKlang)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 elseif(UNIX AND NOT APPLE)
     set(LIBS X11 Xrandr Xinerama Xi Xxf86vm Xcursor GL dl pthread freetype )
 endif()
@@ -30,6 +28,9 @@ configure_file(${SRC_PATH}/utils/root_directory.h.in ${SRC_PATH}/utils/root_dire
 
 link_directories(
     ${LIBRARY_OUTPUT_PATH}
+    ${LIBRARY_OUTPUT_PATH}/Debug
+    ${LIBRARY_OUTPUT_PATH}/Release
+    ${LIBRARY_OUTPUT_PATH}/RelWithDebInfo
 )
 
 include_directories(
@@ -42,6 +43,7 @@ include_directories(
     ${VENDOR_PATH}/assimp/include
     ${SRC_PATH}
     ${SRC_PATH}/shaders
+    ${SRC_PATH}/utils
 )
 
 file(GLOB_RECURSE FILES 
@@ -84,6 +86,6 @@ add_executable(PBRT
 
 target_link_libraries(PBRT
     assimp
-    glfw3
+    glfw3.lib
     ${LIBS}
 )

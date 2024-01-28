@@ -1,1 +1,1 @@
-const char * logl_root = "/home/lyt/Desktop/PBRT";
+const char * logl_root = "C:/mi1k/Resource/PBRT";

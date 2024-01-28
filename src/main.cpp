@@ -143,7 +143,7 @@ int main()
     // ---------------------------------
     stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
-    float *data = stbi_loadf("/home/lyt/Desktop/LearnOpenGL/resources/textures/hdr/newport_loft.hdr", &width, &height, &nrComponents, 0);
+    float *data = stbi_loadf("../src/resources/textures/hdr/newport_loft.hdr", &width, &height, &nrComponents, 0);
     unsigned int hdrTexture;
     if (data)
     {
