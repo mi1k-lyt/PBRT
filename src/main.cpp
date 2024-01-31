@@ -17,6 +17,7 @@
 #include <utils/model.h>
 
 #include <iostream>
+#pragma optimize("", off)
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -91,14 +92,34 @@ int main()
     // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+	GLint numExtensions;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+	// 遍历扩展列表并检查可变着色率扩展
+	bool vrsSupported = false;
+	for (GLint i = 0; i < numExtensions; i++) 
+    {
+		const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		if (strcmp(ext, "GL_NV_shading_rate_image") == 0) 
+        {
+            printf("GL_NV_shading_rate_image\n");
+		}
+        if (strcmp(ext, "GL_NV_primitive_shading_rate") == 0) 
+        {
+            printf("GL_NV_primitive_shading_rate\n");
+        }
+	}
+
     // build and compile shaders
     // -------------------------
-    Shader backgroundShader("../src/shaders/background.vs", "../src/shaders/background.fs");
-    Shader equirectangularToCubemapShader("../src/shaders/cubemap.vs", "../src/shaders/equirectangular_to_cubemap.fs");
-    Shader irradianceShader("../src/shaders/cubemap.vs", "../src/shaders/irradiance_convolution.fs");
-    Shader prefilterShader("../src/shaders/cubemap.vs", "../src/shaders/prefilter.fs");
-    Shader brdfShader("../src/shaders/brdf.vs", "../src/shaders/brdf.fs");
-    Shader shader("../src/shaders/StandardPbr.vs", "../src/shaders/StandardPbr.fs");
+    std::string root = logl_root;
+    Shader backgroundShader(std::string(root + "/src/shaders/background.vs").c_str(), std::string(root + "/src/shaders/background.fs").c_str());
+    Shader equirectangularToCubemapShader(std::string(root + "/src/shaders/cubemap.vs").c_str(), std::string(root + "/src/shaders/equirectangular_to_cubemap.fs").c_str());
+    Shader irradianceShader(std::string(root + "/src/shaders/cubemap.vs").c_str(), std::string(root + "/src/shaders/irradiance_convolution.fs").c_str());
+    Shader prefilterShader(std::string(root + "/src/shaders/cubemap.vs").c_str(), std::string(root + "/src/shaders/prefilter.fs").c_str());
+    Shader brdfShader(std::string(root + "/src/shaders/brdf.vs").c_str(), std::string(root + "/src/shaders/brdf.fs").c_str());
+    Shader texShader(std::string(root + "/src/shaders/offtex.vs").c_str(), std::string(root + "/src/shaders/offtex.fs").c_str());
+    Shader shader(std::string(root + "/src/shaders/StandardPbr.vs").c_str(), std::string(root + "/src/shaders/StandardPbr.fs").c_str());
 
     shader.use();
 
@@ -143,7 +164,7 @@ int main()
     // ---------------------------------
     stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
-    float *data = stbi_loadf("../src/resources/textures/hdr/newport_loft.hdr", &width, &height, &nrComponents, 0);
+    float *data = stbi_loadf(std::string(root + "/src/resources/textures/hdr/newport_loft.hdr").c_str(), &width, &height, &nrComponents, 0);
     unsigned int hdrTexture;
     if (data)
     {
@@ -383,6 +404,61 @@ int main()
     //透明涂层
     float clearCoat = 0.05f;
     float clearCoatRoughness = 0.5f;
+
+    // VRS
+	GLint iPaletteSize;
+	glGetIntegerv(GL_SHADING_RATE_IMAGE_PALETTE_SIZE_NV, &iPaletteSize);
+	GLenum* aPalette = new GLenum[iPaletteSize];
+	aPalette[0] = GL_SHADING_RATE_NO_INVOCATIONS_NV;
+	aPalette[1] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
+	aPalette[2] = GL_SHADING_RATE_1_INVOCATION_PER_2X2_PIXELS_NV;
+	aPalette[3] = GL_SHADING_RATE_1_INVOCATION_PER_4X4_PIXELS_NV;
+	for (size_t i = 4; i < iPaletteSize; ++i)
+		aPalette[i] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
+	glShadingRateImagePaletteNV(0, 0, iPaletteSize, aPalette);
+	delete[] aPalette;
+
+	GLint iTexelHeight, iTexelWidth;
+	glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_WIDTH_NV, &iTexelWidth);
+	glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_HEIGHT_NV, &iTexelHeight);
+ 	GLsizei iWidth = (SCR_WIDTH/* + iTexelWidth - 1*/) / iTexelWidth,
+		iHeight = (SCR_HEIGHT/* + iTexelHeight - 1*/) / iTexelHeight;
+	unsigned char* aImage = new unsigned char[iWidth * iHeight];
+	for (int y = 0; y < iHeight; ++y)
+		for (int x = 0; x < iWidth; ++x)
+		{
+			int iIdx = x + y * iWidth;
+			if (x > iWidth / 2) aImage[iIdx] = 1;
+			else                aImage[iIdx] = 0;
+		}
+	GLuint iShadingImage = 0;
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, &iShadingImage);
+	glBindTexture(GL_TEXTURE_2D, iShadingImage);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8UI, iWidth, iHeight);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, iWidth, iHeight,
+		GL_RED_INTEGER, GL_UNSIGNED_BYTE, aImage);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindShadingRateImageNV(iShadingImage);
+    
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	GLuint tex;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+
+    texShader.use();
+    texShader.setInt("tex", 0);
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -405,6 +481,10 @@ int main()
         ImGui::SliderFloat("clearCoat", &clearCoat, 0.0f, 10.0f);
         ImGui::SliderFloat("clearCoatRoughness", &clearCoatRoughness, 0.0f, 1.0f);
 
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+		glBindShadingRateImageNV(iShadingImage);
+		glEnable(GL_SHADING_RATE_IMAGE_NV);
         shader.use();
         shader.setVec3("albedo", albedo[0], albedo[1], albedo[2]);
         shader.setFloat("metallic", metallic);
@@ -437,7 +517,6 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.use();
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("view", view);
         shader.setVec3("camPos", camera.Position);
@@ -471,6 +550,7 @@ int main()
                 ));
         shader.setMat4("model", model);
         shader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+
         renderSphere();
 
         // render skybox (render as last to prevent overdraw)
@@ -481,7 +561,23 @@ int main()
         glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
         //glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance map
         //glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
+
         renderCube();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_SHADING_RATE_IMAGE_NV);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, iShadingImage);
+        texShader.use();
+        renderQuad();
 
         // Rendering
         ImGui::Render();
