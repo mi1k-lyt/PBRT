@@ -406,58 +406,58 @@ int main()
     float clearCoatRoughness = 0.5f;
 
     // VRS
-	GLint iPaletteSize;
-	glGetIntegerv(GL_SHADING_RATE_IMAGE_PALETTE_SIZE_NV, &iPaletteSize);
-	GLenum* aPalette = new GLenum[iPaletteSize];
-	aPalette[0] = GL_SHADING_RATE_NO_INVOCATIONS_NV;
-	aPalette[1] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
-	aPalette[2] = GL_SHADING_RATE_1_INVOCATION_PER_2X2_PIXELS_NV;
-	aPalette[3] = GL_SHADING_RATE_1_INVOCATION_PER_4X4_PIXELS_NV;
-	for (size_t i = 4; i < iPaletteSize; ++i)
-		aPalette[i] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
-	glShadingRateImagePaletteNV(0, 0, iPaletteSize, aPalette);
-	delete[] aPalette;
+	//GLint iPaletteSize;
+	//glGetIntegerv(GL_SHADING_RATE_IMAGE_PALETTE_SIZE_NV, &iPaletteSize);
+	//GLenum* aPalette = new GLenum[iPaletteSize];
+	//aPalette[0] = GL_SHADING_RATE_NO_INVOCATIONS_NV;
+	//aPalette[1] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
+	//aPalette[2] = GL_SHADING_RATE_1_INVOCATION_PER_2X2_PIXELS_NV;
+	//aPalette[3] = GL_SHADING_RATE_1_INVOCATION_PER_4X4_PIXELS_NV;
+	//for (size_t i = 4; i < iPaletteSize; ++i)
+	//	aPalette[i] = GL_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV;
+	//glShadingRateImagePaletteNV(0, 0, iPaletteSize, aPalette);
+	//delete[] aPalette;
 
-	GLint iTexelHeight, iTexelWidth;
-	glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_WIDTH_NV, &iTexelWidth);
-	glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_HEIGHT_NV, &iTexelHeight);
- 	GLsizei iWidth = (SCR_WIDTH/* + iTexelWidth - 1*/) / iTexelWidth,
-		iHeight = (SCR_HEIGHT/* + iTexelHeight - 1*/) / iTexelHeight;
-	unsigned char* aImage = new unsigned char[iWidth * iHeight];
-	for (int y = 0; y < iHeight; ++y)
-		for (int x = 0; x < iWidth; ++x)
-		{
-			int iIdx = x + y * iWidth;
-			if (x > iWidth / 2) aImage[iIdx] = 1;
-			else                aImage[iIdx] = 0;
-		}
-	GLuint iShadingImage = 0;
-	glEnable(GL_TEXTURE_2D);
-	glGenTextures(1, &iShadingImage);
-	glBindTexture(GL_TEXTURE_2D, iShadingImage);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8UI, iWidth, iHeight);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, iWidth, iHeight,
-		GL_RED_INTEGER, GL_UNSIGNED_BYTE, aImage);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindShadingRateImageNV(iShadingImage);
-    
-	GLuint fbo;
-	glGenFramebuffers(1, &fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	//GLint iTexelHeight, iTexelWidth;
+	//glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_WIDTH_NV, &iTexelWidth);
+	//glGetIntegerv(GL_SHADING_RATE_IMAGE_TEXEL_HEIGHT_NV, &iTexelHeight);
+ //	GLsizei iWidth = (SCR_WIDTH/* + iTexelWidth - 1*/) / iTexelWidth,
+	//	iHeight = (SCR_HEIGHT/* + iTexelHeight - 1*/) / iTexelHeight;
+	//unsigned char* aImage = new unsigned char[iWidth * iHeight];
+	//for (int y = 0; y < iHeight; ++y)
+	//	for (int x = 0; x < iWidth; ++x)
+	//	{
+	//		int iIdx = x + y * iWidth;
+	//		if (x > iWidth / 2) aImage[iIdx] = 1;
+	//		else                aImage[iIdx] = 0;
+	//	}
+	//GLuint iShadingImage = 0;
+	//glEnable(GL_TEXTURE_2D);
+	//glGenTextures(1, &iShadingImage);
+	//glBindTexture(GL_TEXTURE_2D, iShadingImage);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R8UI, iWidth, iHeight);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, iWidth, iHeight,
+	//	GL_RED_INTEGER, GL_UNSIGNED_BYTE, aImage);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	//glBindShadingRateImageNV(iShadingImage);
+ //   
+	//GLuint fbo;
+	//glGenFramebuffers(1, &fbo);
+	//glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-	GLuint tex;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//GLuint tex;
+	//glGenTextures(1, &tex);
+	//glBindTexture(GL_TEXTURE_2D, tex);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 
-    texShader.use();
-    texShader.setInt("tex", 0);
+ //   texShader.use();
+ //   texShader.setInt("tex", 0);
 
     // render loop
     // -----------
@@ -481,10 +481,10 @@ int main()
         ImGui::SliderFloat("clearCoat", &clearCoat, 0.0f, 10.0f);
         ImGui::SliderFloat("clearCoatRoughness", &clearCoatRoughness, 0.0f, 1.0f);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        /*glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 		glBindShadingRateImageNV(iShadingImage);
-		glEnable(GL_SHADING_RATE_IMAGE_NV);
+		glEnable(GL_SHADING_RATE_IMAGE_NV);*/
         shader.use();
         shader.setVec3("albedo", albedo[0], albedo[1], albedo[2]);
         shader.setFloat("metallic", metallic);
@@ -563,21 +563,21 @@ int main()
         //glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
 
         renderCube();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDisable(GL_SHADING_RATE_IMAGE_NV);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+		//glActiveTexture(GL_TEXTURE2);
+		//glBindTexture(GL_TEXTURE_2D, 0);
+  //      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  //      //glDisable(GL_SHADING_RATE_IMAGE_NV);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, iShadingImage);
-        texShader.use();
-        renderQuad();
+  //      glActiveTexture(GL_TEXTURE0);
+  //      //glBindTexture(GL_TEXTURE_2D, tex);
+		//glActiveTexture(GL_TEXTURE1);
+		////glBindTexture(GL_TEXTURE_2D, iShadingImage);
+  //      texShader.use();
+  //      renderQuad();
 
         // Rendering
         ImGui::Render();
